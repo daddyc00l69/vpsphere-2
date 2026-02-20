@@ -1,4 +1,5 @@
-import core, { API_BASE_URL } from './core';
+import core from '../../../src/lib/axios';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.devtushar.uk';
 import { authApi } from './auth';
 import { projectsApi } from './projects';
 import { deploymentsApi } from './deployments';

@@ -24,15 +24,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         // Check initial state from LocalStorage on mount
-        const token = localStorage.getItem('vpsphere_token');
-        const storedUser = localStorage.getItem('vpsphere_user');
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
 
         if (token && storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
             } catch {
-                localStorage.removeItem('vpsphere_token');
-                localStorage.removeItem('vpsphere_user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
             }
         }
         setLoading(false);
@@ -47,14 +47,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const login = (token: string, userData: User) => {
-        localStorage.setItem('vpsphere_token', token);
-        localStorage.setItem('vpsphere_user', JSON.stringify(userData));
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
     };
 
     const logout = () => {
-        localStorage.removeItem('vpsphere_token');
-        localStorage.removeItem('vpsphere_user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
     };
 

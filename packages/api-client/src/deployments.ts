@@ -1,8 +1,8 @@
-import apiClient from './core';
+import api from '../../../src/lib/axios';
 
 export const deploymentsApi = {
     deploy: async (repoUrl: string) => {
-        const { data } = await apiClient.post('/deploy', { repoUrl });
+        const { data } = await api.post('/deploy', { repoUrl });
         return data;
     }
 };
