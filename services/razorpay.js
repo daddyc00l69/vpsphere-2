@@ -1,0 +1,9 @@
+const Razorpay = require('razorpay');
+
+// Initializes Razorpay with secrets from .env (test/live)
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_placeholder',
+});
+
+module.exports = razorpay;
