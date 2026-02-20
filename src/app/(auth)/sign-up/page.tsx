@@ -1,11 +1,41 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 export default function SignUpPage() {
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleSignUp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setLoading(true);
+
+        const { error } = await supabase.auth.signUp({
+            email,
+            password,
+        });
+
+        if (error) {
+            setError(error.message);
+            setLoading(false);
+        } else {
+            // Success: redirect to login without auto-logging in, pass email
+            router.push(`/login?signup=success&email=${encodeURIComponent(email)}`);
+        }
+    };
+
     return (
         <div className="flex flex-col items-center">
             {/* Logo Section */}
@@ -43,21 +73,26 @@ export default function SignUpPage() {
                 </div>
 
                 {/* Sign Up Form */}
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-5" onSubmit={handleSignUp}>
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 p-3 rounded-md text-sm border border-red-200 dark:border-red-800">
+                            {error}
+                        </div>
+                    )}
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="name">Full Name</label>
-                        <Input id="name" type="text" placeholder="John Doe" />
+                        <Input id="name" type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="email">Email Address</label>
-                        <Input id="email" type="email" placeholder="name@company.com" />
+                        <Input id="email" type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="password">Password</label>
                         <div className="relative">
-                            <Input id="password" type="password" placeholder="••••••••" className="pr-10" />
+                            <Input id="password" type="password" placeholder="••••••••" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
                             <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                             </button>
@@ -75,13 +110,10 @@ export default function SignUpPage() {
                         </label>
                     </div>
 
-                    <Link href="/login">
-                        {/* Redirect to login for now as we don't have backend, or dashboard? Let's go to dashboard directly for demo */}
-                        <Button className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
-                            <span>Create Account</span>
-                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                        </Button>
-                    </Link>
+                    <Button type="submit" disabled={loading} className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
+                        <span>{loading ? "Creating Account..." : "Create Account"}</span>
+                        {!loading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
+                    </Button>
                 </form>
             </Card>
 

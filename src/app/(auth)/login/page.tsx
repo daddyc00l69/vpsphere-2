@@ -1,11 +1,63 @@
 "use client";
 
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <LoginContent />
+        </Suspense>
+    );
+}
+
+function LoginContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Auth State
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    // Signup Success State
+    const isSignupSuccess = searchParams.get("signup") === "success";
+    const initialEmail = searchParams.get("email");
+
+    useEffect(() => {
+        if (initialEmail) {
+            setEmail(initialEmail);
+        }
+    }, [initialEmail]);
+
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setLoading(true);
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            setError(error.message);
+            setLoading(false);
+        } else if (data.session) {
+            // Success: redirect to dashboard ("/")
+            router.push("/");
+        } else {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="flex flex-col items-center">
             {/* Logo Section */}
@@ -43,11 +95,21 @@ export default function LoginPage() {
                     <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
                 </div>
 
-                {/* Email Login Form */}
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                {/* Sign In Form */}
+                <form className="space-y-5" onSubmit={handleSignIn}>
+                    {isSignupSuccess && !error && (
+                        <div className="bg-green-50 dark:bg-green-900/30 text-green-600 p-3 rounded-md text-sm border border-green-200 dark:border-green-800">
+                            Your account has been created. Please check your email and verify your address before logging in.
+                        </div>
+                    )}
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 p-3 rounded-md text-sm border border-red-200 dark:border-red-800">
+                            {error}
+                        </div>
+                    )}
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="email">Email Address</label>
-                        <Input id="email" type="email" placeholder="name@company.com" />
+                        <Input id="email" type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     </div>
 
                     <div className="space-y-1.5">
@@ -56,7 +118,7 @@ export default function LoginPage() {
                             <Link href="/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link>
                         </div>
                         <div className="relative">
-                            <Input id="password" type="password" placeholder="••••••••" className="pr-10" />
+                            <Input id="password" type="password" placeholder="••••••••" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} required />
                             <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                             </button>
@@ -72,12 +134,10 @@ export default function LoginPage() {
                         <label htmlFor="remember" className="ml-2 block text-sm font-medium text-slate-500 dark:text-slate-400 select-none">Remember me for 30 days</label>
                     </div>
 
-                    <Link href="/dashboard">
-                        <Button className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
-                            <span>Sign In</span>
-                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                        </Button>
-                    </Link>
+                    <Button type="submit" disabled={loading} className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
+                        <span>{loading ? "Signing In..." : "Sign In"}</span>
+                        {!loading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
+                    </Button>
                 </form>
             </Card>
 

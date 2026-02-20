@@ -1,18 +1,27 @@
 'use client';
 
-import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
-    const { user, loading } = useAuth();
     const router = useRouter();
+    const [loading, setLoading] = useState(true);
+    const [hasSession, setHasSession] = useState(false);
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        }
-    }, [user, loading, router]);
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push('/login');
+            } else {
+                setHasSession(true);
+                setLoading(false);
+            }
+        };
+
+        checkSession();
+    }, [router]);
 
     if (loading) {
         return (
@@ -22,6 +31,6 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
         );
     }
 
-    // If we have a user, render the children, else render nothing pending redirect
-    return user ? <>{children}</> : null;
+    // Do not flash protected content before redirect
+    return hasSession ? <>{children}</> : null;
 }
