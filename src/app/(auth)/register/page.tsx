@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ export default function SignUpPage() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [name, setName] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -22,17 +23,34 @@ export default function SignUpPage() {
         setError(null);
         setLoading(true);
 
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-        });
-
-        if (error) {
-            setError(error.message);
+        const validPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/.test(password);
+        if (!validPassword) {
+            setError("Password must be at least 12 characters and include uppercase, lowercase, number, and special character.");
             setLoading(false);
-        } else {
-            // Success: redirect to login without auto-logging in, pass email
-            router.push(`/login?signup=success&email=${encodeURIComponent(email)}`);
+            return;
+        }
+
+        try {
+            const res = await fetch("https://api.devtushar.uk/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: name.toLowerCase().replace(/\s/g, ''), email, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Registration failed");
+                toast.error(data.error || "Registration failed");
+                setLoading(false);
+            } else if (data.status === 'verification_required' || res.status === 201 || res.status === 202) {
+                toast.success("Registration successful! Please verify your email.");
+                router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+            }
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "An error occurred");
+            toast.error(error.message || "An error occurred");
+            setLoading(false);
         }
     };
 
@@ -92,9 +110,9 @@ export default function SignUpPage() {
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="password">Password</label>
                         <div className="relative">
-                            <Input id="password" type="password" placeholder="••••••••" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-                            <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined text-[20px]">visibility</span>
+                            <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
+                                <span className="material-symbols-outlined text-[20px]">{showPassword ? "visibility_off" : "visibility"}</span>
                             </button>
                         </div>
                     </div>
@@ -106,7 +124,7 @@ export default function SignUpPage() {
                             className="mt-1 size-4 rounded border-slate-300 text-primary focus:ring-primary dark:bg-slate-800 dark:border-slate-600"
                         />
                         <label htmlFor="terms" className="ml-2 block text-sm text-slate-500 dark:text-slate-400">
-                            I agree to the <Link href="#" className="text-primary hover:underline">Terms of Service</Link> and <Link href="#" className="text-primary hover:underline">Privacy Policy</Link>.
+                            I agree to the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
                         </label>
                     </div>
 

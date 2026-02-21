@@ -1,11 +1,58 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
 import Header from "@/components/header";
-// import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SecurityActivityLog from "@/components/SecurityActivityLog";
 
 export default function SettingsPage() {
+    const [is2FASetupVisible, setIs2FASetupVisible] = useState(false);
+    const [qrCode, setQrCode] = useState("");
+    const [secretCode, setSecretCode] = useState("");
+    const [verifyPin, setVerifyPin] = useState("");
+    const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+
+    const generate2FA = async () => {
+        try {
+            const token = localStorage.getItem("vpsphere_token") || "";
+            const res = await fetch("https://api.devtushar.uk/auth/2fa/generate", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setQrCode(data.qrcode);
+                setSecretCode(data.secret);
+                setIs2FASetupVisible(true);
+            } else {
+                toast.error(data.error || "Failed to generate 2FA");
+            }
+        } catch { toast.error("An error occurred mapping 2FA"); }
+    };
+
+    const verifySetup2FA = async () => {
+        try {
+            const token = localStorage.getItem("vpsphere_token");
+            const res = await fetch("https://api.devtushar.uk/auth/2fa/verify-setup", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ token: verifyPin })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success("2FA Successfully Enabled!");
+                setIs2FAEnabled(true);
+                setIs2FASetupVisible(false);
+            } else {
+                toast.error(data.error || "Invalid verification code");
+            }
+        } catch { toast.error("An error occurred verifying 2FA"); }
+    };
     return (
         <div className="flex flex-col h-full">
             <Header />
@@ -84,23 +131,53 @@ export default function SettingsPage() {
                         </div>
                         <hr className="border-slate-200 dark:border-slate-800" />
                         {/* 2FA */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-start gap-3">
-                                <div className="bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 p-2 rounded-lg">
-                                    <span className="material-symbols-outlined text-xl">verified_user</span>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-start gap-3">
+                                    <div className="bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 p-2 rounded-lg">
+                                        <span className="material-symbols-outlined text-xl">verified_user</span>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white">Two-Factor Authentication</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Secure your account with a mobile authenticator app.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-sm text-slate-900 dark:text-white">Two-Factor Authentication</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Secure your account with a mobile authenticator app.</p>
+                                <div className="flex items-center gap-4">
+                                    {is2FAEnabled ? (
+                                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">Enabled</span>
+                                    ) : (
+                                        <Button onClick={generate2FA}>Configure</Button>
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">Enabled</span>
-                                <Button>Configure</Button>
-                            </div>
+
+                            {/* Setup Panel */}
+                            {is2FASetupVisible && !is2FAEnabled && (
+                                <div className="mt-4 p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl flex items-start flex-col md:flex-row gap-6">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    {qrCode && <img src={qrCode} alt="2FA QR Code" className="w-32 h-32 rounded-lg object-contain bg-white p-2 border border-slate-200 shadow-sm" />}
+                                    <div className="flex flex-col gap-3 flex-1">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">Scan this QR Code</h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Scan the QR code with Google Authenticator or your preferred 2FA app. If you can&apos;t scan it, enter this text code manually: <b className="tracking-widest font-mono text-primary bg-primary/10 px-2 py-1 rounded select-all">{secretCode}</b></p>
+                                        <div className="flex gap-2 items-center mt-2 w-full max-w-[360px]">
+                                            <Input
+                                                className="max-w-[140px] text-center tracking-[0.5em] font-mono font-bold"
+                                                placeholder="000000"
+                                                maxLength={6}
+                                                value={verifyPin}
+                                                onChange={e => setVerifyPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                            />
+                                            <Button onClick={verifySetup2FA}>Verify</Button>
+                                            <Button variant="ghost" onClick={() => setIs2FASetupVisible(false)}>Cancel</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+
+                <SecurityActivityLog />
 
                 {/* SSH Keys Section */}
                 <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">

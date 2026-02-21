@@ -25,7 +25,7 @@ export default function HomePage() {
                         VPSphere brings Vercel-like developer experience to your hardware.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
-                        <Link href="/signup" className="w-full sm:w-auto px-8 py-4 bg-vpsPurple text-white rounded-xl font-bold text-lg shadow-xl shadow-vpsPurple/30 hover:bg-vpsPurple/90 hover:scale-[1.02] transition-all">
+                        <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-vpsPurple text-white rounded-xl font-bold text-lg shadow-xl shadow-vpsPurple/30 hover:bg-vpsPurple/90 hover:scale-[1.02] transition-all">
                             Get Started for Free
                         </Link>
                         <button className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white rounded-xl font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
@@ -162,7 +162,7 @@ export default function HomePage() {
                     <h2 className="text-4xl lg:text-5xl font-black text-white mb-8 tracking-tight">Ready to reclaim your hardware?</h2>
                     <p className="text-white/80 mb-10 text-lg">Join the revolution of local-first cloud hosting.</p>
                     <div className="flex justify-center gap-4">
-                        <Link href="/signup" className="px-10 py-4 bg-white text-vpsPurple rounded-xl font-black text-lg shadow-xl hover:scale-105 transition-transform">
+                        <Link href="/register" className="px-10 py-4 bg-white text-vpsPurple rounded-xl font-black text-lg shadow-xl hover:scale-105 transition-transform">
                             Get Started
                         </Link>
                     </div>

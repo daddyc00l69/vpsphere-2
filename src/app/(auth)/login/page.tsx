@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,14 @@ function LoginContent() {
     // Auth State
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // 2FA State
+    const [requires2FA, setRequires2FA] = useState(false);
+    const [twoFactorCode, setTwoFactorCode] = useState("");
+    const [userId, setUserId] = useState("");
 
     // Signup Success State
     const isSignupSuccess = searchParams.get("signup") === "success";
@@ -42,18 +48,71 @@ function LoginContent() {
         setError(null);
         setLoading(true);
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        try {
+            const res = await fetch("https://api.devtushar.uk/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: email, password })
+            });
+            const data = await res.json();
 
-        if (error) {
-            setError(error.message);
+            if (res.status === 202 && data.requires_2fa) {
+                setRequires2FA(true);
+                setUserId(data.userId);
+                setLoading(false);
+                toast.info("Please enter your 2FA Authentication Code");
+                return;
+            }
+
+            if (!res.ok) {
+                setError(data.error || "Login failed");
+                toast.error(data.error || "Login failed");
+                setLoading(false);
+            } else {
+                localStorage.setItem('vpsphere_token', data.token);
+                if (data.user) {
+                    localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
+                }
+                document.cookie = `vpsphere_token=${data.token}; path=/; max-age=2592000; samesite=strict`;
+                toast.success("Successfully logged in");
+                router.push("/dashboard");
+            }
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "An error occurred");
+            toast.error(error.message || "An error occurred");
             setLoading(false);
-        } else if (data.session) {
-            // Success: redirect to dashboard ("/")
-            router.push("/");
-        } else {
+        }
+    };
+
+    const handle2FASubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setLoading(true);
+
+        try {
+            const res = await fetch("https://api.devtushar.uk/auth/2fa/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, token: twoFactorCode })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Invalid 2FA code");
+                toast.error(data.error || "Invalid 2FA code");
+                setLoading(false);
+            } else {
+                localStorage.setItem('vpsphere_token', data.token);
+                if (data.user) {
+                    localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
+                }
+                document.cookie = `vpsphere_token=${data.token}; path=/; max-age=2592000; samesite=strict`;
+                toast.success("Successfully authenticated");
+                router.push("/dashboard");
+            }
+        } catch (err: unknown) {
+            setError((err as Error).message || "An error occurred");
             setLoading(false);
         }
     };
@@ -95,56 +154,94 @@ function LoginContent() {
                     <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
                 </div>
 
-                {/* Sign In Form */}
-                <form className="space-y-5" onSubmit={handleSignIn}>
-                    {isSignupSuccess && !error && (
-                        <div className="bg-green-50 dark:bg-green-900/30 text-green-600 p-3 rounded-md text-sm border border-green-200 dark:border-green-800">
-                            Your account has been created. Please check your email and verify your address before logging in.
+                {/* Conditional Form Rendering */}
+                {requires2FA ? (
+                    <form className="space-y-5" onSubmit={handle2FASubmit}>
+                        {error && (
+                            <div className="bg-red-50 dark:bg-red-900/30 text-red-600 p-3 rounded-md text-sm border border-red-200 dark:border-red-800">
+                                {error}
+                            </div>
+                        )}
+                        <div className="space-y-1.5 text-center mb-4">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                Enter the 6-digit code from your authenticator app.
+                            </p>
                         </div>
-                    )}
-                    {error && (
-                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 p-3 rounded-md text-sm border border-red-200 dark:border-red-800">
-                            {error}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="twofactor">Authentication Code</label>
+                            <Input
+                                id="twofactor"
+                                type="text"
+                                placeholder="000000"
+                                className="text-center tracking-widest text-lg"
+                                maxLength={6}
+                                value={twoFactorCode}
+                                onChange={(e) => setTwoFactorCode(e.target.value.replace(/[^0-9]/g, ''))}
+                                required
+                                autoFocus
+                            />
                         </div>
-                    )}
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="email">Email Address</label>
-                        <Input id="email" type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="password">Password</label>
-                            <Link href="/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link>
-                        </div>
-                        <div className="relative">
-                            <Input id="password" type="password" placeholder="••••••••" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                            <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined text-[20px]">visibility</span>
+                        <Button type="submit" disabled={loading} className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
+                            <span>{loading ? "Verifying..." : "Verify Identity"}</span>
+                            {!loading && <span className="material-symbols-outlined text-[18px]">lock_open</span>}
+                        </Button>
+                        <div className="text-center mt-4">
+                            <button type="button" onClick={() => setRequires2FA(false)} className="text-xs text-slate-500 hover:text-primary hover:underline">
+                                Need to login with a different account?
                             </button>
                         </div>
-                    </div>
+                    </form>
+                ) : (
+                    <form className="space-y-5" onSubmit={handleSignIn}>
+                        {isSignupSuccess && !error && (
+                            <div className="bg-green-50 dark:bg-green-900/30 text-green-600 p-3 rounded-md text-sm border border-green-200 dark:border-green-800">
+                                Your account has been created. Please check your email and verify your address before logging in.
+                            </div>
+                        )}
+                        {error && (
+                            <div className="bg-red-50 dark:bg-red-900/30 text-red-600 p-3 rounded-md text-sm border border-red-200 dark:border-red-800">
+                                {error}
+                            </div>
+                        )}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="email">Username or Email</label>
+                            <Input id="email" type="text" placeholder="name@company.com or username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        </div>
 
-                    <div className="flex items-center">
-                        <input
-                            id="remember"
-                            type="checkbox"
-                            className="size-4 rounded border-slate-300 text-primary focus:ring-primary dark:bg-slate-800 dark:border-slate-600"
-                        />
-                        <label htmlFor="remember" className="ml-2 block text-sm font-medium text-slate-500 dark:text-slate-400 select-none">Remember me for 30 days</label>
-                    </div>
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-semibold text-slate-900 dark:text-white" htmlFor="password">Password</label>
+                                <Link href="/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link>
+                            </div>
+                            <div className="relative">
+                                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pr-10" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
+                                    <span className="material-symbols-outlined text-[20px]">{showPassword ? "visibility_off" : "visibility"}</span>
+                                </button>
+                            </div>
+                        </div>
 
-                    <Button type="submit" disabled={loading} className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
-                        <span>{loading ? "Signing In..." : "Sign In"}</span>
-                        {!loading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
-                    </Button>
-                </form>
+                        <div className="flex items-center">
+                            <input
+                                id="remember"
+                                type="checkbox"
+                                className="size-4 rounded border-slate-300 text-primary focus:ring-primary dark:bg-slate-800 dark:border-slate-600"
+                            />
+                            <label htmlFor="remember" className="ml-2 block text-sm font-medium text-slate-500 dark:text-slate-400 select-none">Remember me for 30 days</label>
+                        </div>
+
+                        <Button type="submit" disabled={loading} className="w-full justify-center shadow-lg shadow-primary/20 mt-2" size="lg">
+                            <span>{loading ? "Signing In..." : "Sign In"}</span>
+                            {!loading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
+                        </Button>
+                    </form>
+                )}
             </Card>
 
             {/* Footer */}
             <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
                 Don&apos;t have an account?{" "}
-                <Link href="/sign-up" className="font-bold text-primary hover:underline">
+                <Link href="/register" className="font-bold text-primary hover:underline">
                     Sign up for free
                 </Link>
             </p>

@@ -2,7 +2,7 @@ export const ROUTES = {
     // Public
     HOME: "/",
     LOGIN: "/login",
-    SIGNUP: "/signup",
+    SIGNUP: "/register",
     PRICING: "/pricing",
     DOCS: "/docs",
 

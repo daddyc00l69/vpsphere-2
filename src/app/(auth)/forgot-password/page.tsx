@@ -4,8 +4,40 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
+    const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!email) return toast.error("Please enter your email");
+
+        setLoading(true);
+        try {
+            const res = await fetch("https://api.devtushar.uk/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.error || "Failed to send reset link");
+            } else {
+                toast.success(data.message || "If an account exists, a reset link was sent.");
+                setEmail("");
+            }
+        } catch {
+            toast.error("Network error. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
     return (
         <div className="flex flex-col items-center">
             {/* Logo Section */}
@@ -30,16 +62,25 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {/* Form */}
-                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="email">
                             Email Address
                         </label>
-                        <Input id="email" type="email" placeholder="name@company.com" required className="py-3" />
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder="name@company.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="py-3"
+                            disabled={loading}
+                        />
                     </div>
 
-                    <Button className="w-full justify-center" size="lg">
-                        Send Reset Link
+                    <Button className="w-full justify-center" size="lg" disabled={loading}>
+                        {loading ? "Sending..." : "Send Reset Link"}
                     </Button>
                 </form>
 
