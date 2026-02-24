@@ -49,9 +49,11 @@ function LoginContent() {
         setLoading(true);
 
         try {
-            const res = await fetch("https://api.devtushar.uk/auth/login", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            const res = await fetch(`${apiUrl}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ username: email, password })
             });
             const data = await res.json();
@@ -69,11 +71,9 @@ function LoginContent() {
                 toast.error(data.error || "Login failed");
                 setLoading(false);
             } else {
-                localStorage.setItem('vpsphere_token', data.token);
                 if (data.user) {
                     localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
                 }
-                document.cookie = `vpsphere_token=${data.token}; path=/; max-age=2592000; samesite=strict`;
                 toast.success("Successfully logged in");
                 router.push("/dashboard");
             }
@@ -91,9 +91,11 @@ function LoginContent() {
         setLoading(true);
 
         try {
-            const res = await fetch("https://api.devtushar.uk/auth/2fa/login", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            const res = await fetch(`${apiUrl}/auth/2fa/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ userId, token: twoFactorCode })
             });
             const data = await res.json();
@@ -103,11 +105,9 @@ function LoginContent() {
                 toast.error(data.error || "Invalid 2FA code");
                 setLoading(false);
             } else {
-                localStorage.setItem('vpsphere_token', data.token);
                 if (data.user) {
                     localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
                 }
-                document.cookie = `vpsphere_token=${data.token}; path=/; max-age=2592000; samesite=strict`;
                 toast.success("Successfully authenticated");
                 router.push("/dashboard");
             }

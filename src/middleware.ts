@@ -9,11 +9,6 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Redirect logged-in users away from auth pages
-    if (token && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register' || request.nextUrl.pathname === '/forgot-password')) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
     return NextResponse.next()
 }
 

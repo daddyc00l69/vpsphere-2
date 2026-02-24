@@ -23,6 +23,7 @@ export const ROUTES = {
     // Settings & Billing
     BILLING: "/billing",
     SETTINGS: "/settings",
+    SETTINGS_CONNECTIONS: "/settings/connections",
     SETTINGS_ALERTS: "/settings/alerts",
     PROFILE: "/settings/profile",
     TEAM: "/settings/team",

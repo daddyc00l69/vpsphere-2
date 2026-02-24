@@ -46,9 +46,11 @@ function ResetPasswordContent() {
         setLoading(true);
 
         try {
-            const res = await fetch("https://api.devtushar.uk/auth/reset-password", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            const res = await fetch(`${apiUrl}/auth/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ email, token, newPassword: password })
             });
 
@@ -61,16 +63,8 @@ function ResetPasswordContent() {
                 toast.success("Password successfully reset! Logging you in...");
 
                 // If it returns an accessToken, let's login directly
-                if (data.token) {
-                    localStorage.setItem('vpsphere_token', data.token);
-                    if (data.user) {
-                        localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
-                    }
-                    document.cookie = `vpsphere_token=${data.token}; path=/; max-age=2592000; samesite=strict`;
-                    router.push("/dashboard");
-                } else {
-                    router.push("/login");
-                }
+                if (data.user) localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
+                router.push("/dashboard");
             }
         } catch {
             setError("A network error occurred.");

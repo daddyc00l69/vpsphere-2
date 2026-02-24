@@ -18,9 +18,11 @@ export default function ForgotPasswordPage() {
 
         setLoading(true);
         try {
-            const res = await fetch("https://api.devtushar.uk/auth/forgot-password", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            const res = await fetch(`${apiUrl}/auth/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ email })
             });
 

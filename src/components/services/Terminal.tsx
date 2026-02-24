@@ -6,25 +6,48 @@ import { cn } from "@/lib/utils";
 export interface TerminalProps {
     className?: string;
     logs?: string[];
+    title?: string;
 }
 
-export function Terminal({ className, logs: externalLogs }: TerminalProps) {
+export function Terminal({ className, logs: externalLogs, title }: TerminalProps) {
+    const [mounted, setMounted] = useState(false);
     const [internalLogs] = useState([
-        { time: "2023-10-24 14:30:01", type: "INFO", msg: "Docker engine heartbeat successful. All nodes responding.", color: "text-green-400" },
-        { time: "2023-10-24 14:30:05", type: "INFO", msg: "Pulling image 'node:18-alpine' for service auth-api-v2...", color: "text-green-400" },
-        { time: "2023-10-24 14:31:12", type: "WARN", msg: "High memory usage detected on node-east-01 (88%). Scaling recommended.", color: "text-amber-400" },
-        { time: "2023-10-24 14:32:00", type: "INFO", msg: "Auto-balancing fleet distribution across 3 availability zones.", color: "text-green-400" },
-        { time: "2023-10-24 14:32:45", type: "ERROR", msg: "Connection timeout to postgres-db-replica-01. Retrying in 5s...", color: "text-red-400" },
-        { time: "2023-10-24 14:33:10", type: "INFO", msg: "User 'dev-ops-02' updated limits for container 'worker-node-01'.", color: "text-green-400" },
+        { time: "14:30:01", type: "INFO", msg: "Docker engine heartbeat successful. All nodes responding.", color: "text-green-400" },
+        { time: "14:30:05", type: "INFO", msg: "Pulling image 'node:18-alpine' for service auth-api-v2...", color: "text-green-400" },
+        { time: "14:31:12", type: "WARN", msg: "High memory usage detected on node-east-01 (88%). Scaling recommended.", color: "text-amber-400" },
+        { time: "14:32:00", type: "INFO", msg: "Auto-balancing fleet distribution across 3 availability zones.", color: "text-green-400" },
+        { time: "14:32:45", type: "ERROR", msg: "Connection timeout to postgres-db-replica-01. Retrying in 5s...", color: "text-red-400" },
+        { time: "14:33:10", type: "INFO", msg: "User 'dev-ops-02' updated limits for container 'worker-node-01'.", color: "text-green-400" },
     ]);
 
-    // Use external logs if provided (formatted simply), otherwise use internal detailed logs
-    const displayLogs = externalLogs ? externalLogs.map(msg => ({
-        time: new Date().toLocaleTimeString(),
-        type: msg.includes("ERROR") ? "ERROR" : "INFO",
-        msg: msg.replace(/\[.*?\]\s*/, ""), // Remove [INFO] prefix if present in msg for cleaner display
-        color: msg.includes("ERROR") ? "text-red-400" : "text-green-400"
-    })) : internalLogs;
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const [logsWithTimes, setLogsWithTimes] = useState<{ time: string; type: string; msg: string; color: string }[]>([]);
+
+    useEffect(() => {
+        if (!mounted) return;
+
+        if (!externalLogs) {
+            setLogsWithTimes(internalLogs);
+            return;
+        }
+
+        // Only add times to new logs that aren't already processed
+        if (externalLogs.length > logsWithTimes.length) {
+            const currentTime = new Date().toLocaleTimeString();
+            const newLogs = externalLogs.slice(logsWithTimes.length).map(msg => ({
+                time: currentTime,
+                type: msg.includes("ERROR") ? "ERROR" : "INFO",
+                msg: msg.replace(/\[.*?\]\s*/, ""),
+                color: msg.includes("ERROR") ? "text-red-400" : "text-green-400"
+            }));
+            setLogsWithTimes(prev => [...prev, ...newLogs]);
+        }
+    }, [externalLogs, mounted, internalLogs, logsWithTimes.length]);
+
+    const displayLogs = logsWithTimes;
 
     const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +60,9 @@ export function Terminal({ className, logs: externalLogs }: TerminalProps) {
             <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between bg-white/5">
                 <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-slate-400 text-sm">terminal</span>
-                    <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Global System Logs</span>
+                    <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+                        {title || "Global System Logs"}
+                    </span>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex gap-2 text-[10px]">

@@ -6,6 +6,7 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.devt
 // Create the core axios instance
 export const apiClient: AxiosInstance = axios.create({
     baseURL: API_BASE_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -13,12 +14,41 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Request Interceptor: Attach JWT Token
 apiClient.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
+    async (config: InternalAxiosRequestConfig) => {
         // We execute this primarily in browsers, so we check for window
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('vpsphere_token');
             if (token && config.headers) {
                 config.headers.Authorization = `Bearer ${token}`;
+            }
+
+            // Extract CSRF token from cookies
+            const getCsrf = () => {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith('csrf_token=')) {
+                        return cookie.substring('csrf_token='.length, cookie.length);
+                    }
+                }
+                return '';
+            };
+
+            let csrfToken = getCsrf();
+
+            // If missing and it's a mutative method, fetch it from /health first
+            const method = config.method?.toLowerCase();
+            if (!csrfToken && method && ['post', 'put', 'patch', 'delete'].includes(method)) {
+                try {
+                    await axios.get(`${API_BASE_URL}/health`, { withCredentials: true });
+                    csrfToken = getCsrf();
+                } catch (e) {
+                    console.error('Failed to pre-fetch CSRF token', e);
+                }
+            }
+
+            if (csrfToken && config.headers) {
+                config.headers['x-csrf-token'] = csrfToken;
             }
         }
         return config;

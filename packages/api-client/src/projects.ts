@@ -6,6 +6,11 @@ export const projectsApi = {
         return data;
     },
 
+    get: async (projectId: string) => {
+        const { data } = await api.get(`/project/${projectId}`);
+        return data;
+    },
+
     start: async (projectId: string) => {
         const { data } = await api.post('/project/start', { projectId });
         return data;

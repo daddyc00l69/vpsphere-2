@@ -9,6 +9,7 @@ import { ROUTES } from "@/config/routes";
 import confetti from "canvas-confetti";
 
 import { io } from "socket.io-client";
+import api from "@vpsphere/api-client";
 
 type DeploymentState = "pending" | "cloning" | "building" | "deploying" | "running" | "failed";
 
@@ -47,11 +48,37 @@ export function DeploymentStatus({ startState = "pending", serviceId }: Deployme
     };
 
     const currentStep = getStepFromStatus(state);
+    const progressPct = (() => {
+        switch (state) {
+            case "pending": return 10;
+            case "cloning": return 35;
+            case "building": return 65;
+            case "deploying": return 85;
+            case "running": return 100;
+            case "failed": return 100;
+            default: return 10;
+        }
+    })();
+
+    const [subdomain, setSubdomain] = useState<string>("");
 
     useEffect(() => {
         if (!serviceId || serviceId === "unknown-service") return;
 
-        const socket = io("https://api.devtushar.uk", {
+        // Fetch project details to get real subdomain
+        const fetchProject = async () => {
+            try {
+                const response = await api.core.get(`/project/${serviceId}`);
+                if (response.data && response.data.subdomain) {
+                    setSubdomain(response.data.subdomain);
+                }
+            } catch (err) {
+                console.error("Failed to fetch project details", err);
+            }
+        };
+        fetchProject();
+
+        const socket = io(process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk", {
             withCredentials: true,
             reconnectionAttempts: 5
         });
@@ -64,9 +91,7 @@ export function DeploymentStatus({ startState = "pending", serviceId }: Deployme
         socket.on("deploymentUpdate", (data: { status: DeploymentState, logs?: string }) => {
             setState(data.status);
             if (data.logs) {
-                // Split multi-line DB logs into individual terminal lines
-                const newLines = data.logs.split('\n');
-                setLogs(prev => [...prev, ...newLines]);
+                setLogs(data.logs.split('\n'));
             }
 
             if (data.status === "running") {
@@ -140,6 +165,13 @@ export function DeploymentStatus({ startState = "pending", serviceId }: Deployme
                     )}
                 </div>
 
+                {(state === "pending" || state === "cloning" || state === "building" || state === "deploying") && (
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-xs text-slate-500">Current deployment</p>
+                        <p className="text-xs text-slate-500">In progress ({progressPct}%)</p>
+                    </div>
+                )}
+
                 {/* Progress Stepper */}
                 <div className="relative flex justify-between">
                     <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 dark:bg-slate-800 -translate-y-1/2 rounded-full -z-10"></div>
@@ -168,8 +200,8 @@ export function DeploymentStatus({ startState = "pending", serviceId }: Deployme
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <Terminal logs={logs} />
+                <div className="lg:col-span-2 min-w-0">
+                    <Terminal logs={logs} title="build-logs.txt" />
                 </div>
 
                 {/* Right Column: Status & Actions */}
@@ -211,14 +243,14 @@ export function DeploymentStatus({ startState = "pending", serviceId }: Deployme
                                 </p>
 
                                 <div className="space-y-3">
-                                    <a href={`https://${serviceId}.vpsphere.app`} target="_blank" rel="noopener noreferrer"
+                                    <a href={`http://${subdomain}`} target="_blank" rel="noopener noreferrer"
                                         className="block p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-primary transition-all group">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Public URL</span>
                                             <span className="material-symbols-outlined text-slate-400 text-sm group-hover:text-primary">open_in_new</span>
                                         </div>
                                         <div className="text-primary font-mono text-sm truncate">
-                                            https://{serviceId}.vpsphere.app
+                                            http://{subdomain}
                                         </div>
                                     </a>
                                     <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg">
@@ -231,7 +263,12 @@ export function DeploymentStatus({ startState = "pending", serviceId }: Deployme
                                     <Link href={ROUTES.DASHBOARD} className="flex-1">
                                         <Button className="w-full" variant="outline">Dashboard</Button>
                                     </Link>
-                                    <Button className="flex-1 bg-primary hover:bg-primary/90 text-white">Manage</Button>
+                                    <Button
+                                        onClick={() => document.getElementById('network-config')?.scrollIntoView({ behavior: 'smooth' })}
+                                        className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                                    >
+                                        Manage
+                                    </Button>
                                 </div>
                             </motion.div>
                         )}

@@ -49,7 +49,7 @@ export function SubdomainManager({ initialSubdomain }: SubdomainManagerProps) {
                                 className="pr-32 font-mono text-sm"
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm select-none pointer-events-none">
-                                .vpsphere.app
+                                .devtushar.uk
                             </div>
                         </div>
                         <Button
@@ -62,7 +62,7 @@ export function SubdomainManager({ initialSubdomain }: SubdomainManagerProps) {
                         </Button>
                     </div>
                     <p className="text-xs text-slate-500">
-                        Your app is accessible at <a href={`https://${subdomain}.vpsphere.app`} className="text-primary hover:underline">https://{subdomain}.vpsphere.app</a>
+                        Your app is accessible at <a href={`http://${subdomain}.devtushar.uk`} className="text-primary hover:underline">http://{subdomain}.devtushar.uk</a>
                     </p>
                 </div>
 

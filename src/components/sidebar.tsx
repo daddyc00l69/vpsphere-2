@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ROUTES } from "@/config/routes";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 const navItems = [
     { name: "Projects", icon: "layers", href: ROUTES.DASHBOARD },
@@ -27,8 +29,49 @@ const settingsItems = [
 
 export function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [user, setUser] = useState<{ username?: string, email?: string }>({});
 
     const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(href));
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('vpsphere_user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse stored user", e);
+            }
+        }
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            await fetch(`${apiUrl}/auth/logout`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include"
+            });
+        } catch (error) {
+            console.error("Logout failed", error);
+        } finally {
+            localStorage.removeItem('vpsphere_user');
+            toast.success("Logged out successfully");
+            router.push('/login');
+        }
+    };
 
     return (
         <aside className="w-[240px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full">
@@ -80,14 +123,35 @@ export function Sidebar() {
                 ))}
             </nav>
 
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-                <button className="flex items-center gap-3 p-2 w-full rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left">
-                    {/* Placeholder Avatar */}
-                    <div className="size-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs" >
-                        AR
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 relative" ref={dropdownRef}>
+                {isProfileOpen && (
+                    <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+                        <div className="p-3 border-b border-slate-100 dark:border-slate-700">
+                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.username || "User"}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email || "No email"}</p>
+                        </div>
+                        <div className="p-1">
+                            <Link href={ROUTES.SETTINGS} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                <span className="material-symbols-outlined text-sm">settings</span>
+                                Settings
+                            </Link>
+                            <button onClick={handleLogout} className="flex items-center w-full gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors text-left">
+                                <span className="material-symbols-outlined text-sm">logout</span>
+                                Log out
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center gap-3 p-2 w-full rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                >
+                    <div className="size-8 rounded-full bg-vpsPurple/10 flex items-center justify-center text-vpsPurple font-bold text-xs uppercase" >
+                        {(user.username || "U").substring(0, 2)}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate text-slate-900 dark:text-white">Alex Rivera</p>
+                        <p className="text-sm font-medium truncate text-slate-900 dark:text-white">{user.username || "User"}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Pro Plan</p>
                     </div>
                     <span className="material-symbols-outlined text-slate-400 text-lg">unfold_more</span>

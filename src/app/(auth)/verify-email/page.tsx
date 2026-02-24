@@ -27,9 +27,11 @@ function VerifyEmailForm() {
         setLoading(true);
 
         try {
-            const res = await fetch("https://api.devtushar.uk/auth/otp/verify", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            const res = await fetch(`${apiUrl}/auth/otp/verify`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ email, otp })
             });
             const data = await res.json();
@@ -39,13 +41,7 @@ function VerifyEmailForm() {
                 toast.error(data.error || "Verification failed");
                 setLoading(false);
             } else {
-                if (data.token) {
-                    localStorage.setItem('vpsphere_token', data.token);
-                    if (data.user) {
-                        localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
-                    }
-                    document.cookie = `vpsphere_token=${data.token}; path=/; max-age=86400; samesite=strict`;
-                }
+                if (data.user) localStorage.setItem('vpsphere_user', JSON.stringify(data.user));
                 toast.success("Email verified! Redirecting to dashboard...");
                 // Success: Cookie is set by backend. Redirect instantly!
                 router.push("/dashboard");
@@ -63,9 +59,11 @@ function VerifyEmailForm() {
         if (!email) return;
         toast.info("Resending OTP...");
         try {
-            await fetch("https://api.devtushar.uk/auth/otp/send", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            await fetch(`${apiUrl}/auth/otp/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ email })
             });
             toast.success("A new verification code has been sent!");

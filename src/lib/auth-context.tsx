@@ -1,6 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.devtushar.uk';
 
 export interface User {
     id: string;
@@ -12,7 +14,7 @@ export interface User {
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (token: string, userData: User) => void;
+    setUserData: (userData: User | null) => void;
     logout: () => void;
 }
 
@@ -22,20 +24,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Check initial state from LocalStorage on mount
-        const token = localStorage.getItem('vpsphere_token');
-        const storedUser = localStorage.getItem('vpsphere_user');
-
-        if (token && storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch {
-                localStorage.removeItem('vpsphere_token');
-                localStorage.removeItem('vpsphere_user');
-            }
+    const setUserData = useCallback((userData: User | null) => {
+        if (!userData) {
+            localStorage.removeItem('vpsphere_user');
+            setUser(null);
+            return;
         }
-        setLoading(false);
+        localStorage.setItem('vpsphere_user', JSON.stringify(userData));
+        setUser(userData);
+    }, []);
+
+    const logout = useCallback(async () => {
+        try {
+            await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch {
+            // ignore; we still clear local state and redirect
+        } finally {
+            localStorage.removeItem('vpsphere_user');
+            setUser(null);
+            window.location.href = '/login';
+        }
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        // Cookie-based session: hydrate user from backend (/auth/me).
+        const hydrate = async () => {
+            try {
+                const res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' });
+                if (!res.ok) {
+                    if (!cancelled) setUser(null);
+                    return;
+                }
+                const data = await res.json();
+                const u = data?.user || null;
+                if (!cancelled) setUser(u);
+                if (u) localStorage.setItem('vpsphere_user', JSON.stringify(u));
+            } catch {
+                if (!cancelled) setUser(null);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+
+        hydrate();
 
         // Listen to global 401 unauth ejects from the api-client interceptor
         const handleUnauthorized = () => {
@@ -43,25 +79,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
 
         window.addEventListener('vpsphere_unauthorized', handleUnauthorized);
-        return () => window.removeEventListener('vpsphere_unauthorized', handleUnauthorized);
-    }, []);
+        return () => {
+            cancelled = true;
+            window.removeEventListener('vpsphere_unauthorized', handleUnauthorized);
+        };
+    }, [logout]);
 
-    const login = (token: string, userData: User) => {
-        localStorage.setItem('vpsphere_token', token);
-        localStorage.setItem('vpsphere_user', JSON.stringify(userData));
-        setUser(userData);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('vpsphere_token');
-        localStorage.removeItem('vpsphere_user');
-        document.cookie = 'vpsphere_token=; path=/; max-age=0; samesite=strict';
-        setUser(null);
-        window.location.href = '/login';
-    };
+    const value = useMemo(() => ({ user, loading, setUserData, logout }), [user, loading, setUserData, logout]);
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

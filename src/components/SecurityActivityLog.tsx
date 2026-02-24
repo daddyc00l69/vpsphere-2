@@ -21,10 +21,8 @@ export default function SecurityActivityLog() {
 
     const fetchLogs = async () => {
         try {
-            const token = localStorage.getItem("vpsphere_token");
-            const res = await fetch("https://api.devtushar.uk/auth/audit-logs", {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.devtushar.uk";
+            const res = await fetch(`${apiUrl}/auth/audit-logs`, { credentials: "include" });
             const data = await res.json();
             if (res.ok) {
                 setLogs(data);

@@ -7,13 +7,28 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ROUTES } from "@/config/routes";
+import api from "@vpsphere/api-client";
 
 export default function DeploymentPage() {
     const params = useParams();
     const serviceId = params ? params.id as string : "unknown-service";
+    const [project, setProject] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        if (!serviceId || serviceId === "unknown-service") return;
+        const fetchProject = async () => {
+            try {
+                const response = await api.core.get(`/project/${serviceId}`);
+                setProject(response.data);
+            } catch (err) {
+                console.error("Failed to fetch project for page", err);
+            }
+        };
+        fetchProject();
+    }, [serviceId]);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-background-dark p-6 md:p-12 space-y-12">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-background-dark p-6 md:p-12 space-y-12 scroll-smooth min-h-0">
             {/* Breadcrumbs / Header */}
             <div className="max-w-5xl mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -35,14 +50,14 @@ export default function DeploymentPage() {
             <div className="border-t border-slate-200 dark:border-slate-800 max-w-5xl mx-auto"></div>
 
             {/* Subdomain Management Section */}
-            <section className="max-w-5xl mx-auto animate-fade-in pb-20">
+            <section id="network-config" className="max-w-5xl mx-auto animate-fade-in pb-20">
                 <div className="mb-8">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Network Configuration</h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm">
                         Manage how users access your deployment. Changes may take up to 2 minutes to propagate.
                     </p>
                 </div>
-                <SubdomainManager initialSubdomain={serviceId} />
+                <SubdomainManager initialSubdomain={project?.subdomain || serviceId} />
             </section>
         </div>
     );
