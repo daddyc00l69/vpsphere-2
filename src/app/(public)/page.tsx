@@ -13,7 +13,7 @@ export default function HomePage() {
 
                 <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vpsPurple/10 text-vpsPurple text-xs font-bold mb-8 border border-vpsPurple/20 animate-fade-in-up">
-                        <span className="flex h-2 w-2 rounded-full bg-vpsPurple animate-pulse"></span>
+                        <span className="flex h-2 w-2 rounded-full bg-vpsPurple animate-pulse"></span>{" "}
                         NOW IN PUBLIC BETA
                     </div>
                     <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white mb-8 leading-[1.1] tracking-tight max-w-5xl mx-auto animate-fade-in-up delay-100">
@@ -29,7 +29,7 @@ export default function HomePage() {
                             Get Started for Free
                         </Link>
                         <button className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white rounded-xl font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
-                            <span className="material-symbols-outlined">play_circle</span>
+                            <span className="material-symbols-outlined">play_circle</span>{" "}
                             Watch Demo
                         </button>
                     </div>
@@ -64,7 +64,7 @@ export default function HomePage() {
                                 <div className="flex gap-4 mt-8">
                                     <Link href="/dashboard">
                                         <Button size="lg" className="h-12 px-8 text-base bg-vpsPurple hover:bg-vpsPurple/90 text-white shadow-xl shadow-vpsPurple/20 rounded-vps font-bold transition-all hover:scale-105 active:scale-95">
-                                            Launch Console
+                                            Launch Console{" "}
                                             <span className="material-symbols-outlined ml-2">rocket_launch</span>
                                         </Button>
                                     </Link>
@@ -89,7 +89,7 @@ export default function HomePage() {
                                 Connect to your local services securely from anywhere without opening ports. We provide a secure, encrypted tunnel directly to your device.
                             </p>
                             <div className="bg-slate-800/50 rounded-xl p-4 font-mono text-xs text-emerald-400 border border-slate-700">
-                                $ curl https://api.vpsphere.dev<br />
+                                $ curl https://api.devtushar.uk<br />
                                 {">"} HTTP/1.1 200 OK<br />
                                 {">"} Server: VPSphere-Edge
                             </div>

@@ -23,7 +23,7 @@ export function HeroPreview() {
                     </div>
                     <div className="bg-slate-800 rounded-md px-3 py-1 text-xs text-slate-400 font-mono flex-1 text-center max-w-sm mx-auto flex items-center justify-center gap-2">
                         <span className="material-symbols-outlined text-[10px]">lock</span>
-                        dashboard.vpsphere.dev
+                        dashboard.devtushar.uk
                     </div>
                 </div>
 

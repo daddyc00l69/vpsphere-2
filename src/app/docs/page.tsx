@@ -14,7 +14,7 @@ export default function DocsPage() {
 
                 <section id="introduction" className="mb-12 scroll-mt-24">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 group flex items-center gap-2">
-                        Introduction
+                        Introduction{" "}
                         <a href="#introduction" className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary transition-opacity">#</a>
                     </h2>
                     <p className="text-slate-600 dark:text-slate-300 mb-4 leading-7">
@@ -34,14 +34,14 @@ export default function DocsPage() {
 
                 <section id="base-url" className="mb-12 scroll-mt-24">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 group flex items-center gap-2">
-                        Base URL
+                        Base URL{" "}
                         <a href="#base-url" className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary transition-opacity">#</a>
                     </h2>
                     <p className="text-slate-600 dark:text-slate-300 mb-4">
                         All API requests should be made to the following base URL:
                     </p>
                     <div className="bg-slate-900 rounded-xl p-4 flex items-center justify-between group">
-                        <code className="text-green-400 font-mono text-sm">https://api.vpsphere.cloud/v1</code>
+                        <code className="text-green-400 font-mono text-sm">https://api.devtushar.uk/v1</code>
                         <button className="text-slate-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100" title="Copy">
                             <span className="material-symbols-outlined text-lg">content_copy</span>
                         </button>
@@ -50,7 +50,7 @@ export default function DocsPage() {
 
                 <section id="authentication" className="mb-12 scroll-mt-24">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 group flex items-center gap-2">
-                        Authentication
+                        Authentication{" "}
                         <a href="#authentication" className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary transition-opacity">#</a>
                     </h2>
                     <p className="text-slate-600 dark:text-slate-300 mb-4 leading-7">
@@ -63,7 +63,7 @@ export default function DocsPage() {
                         </div>
                         <div className="p-4 overflow-x-auto">
                             <pre className="text-sm font-mono text-slate-300 leading-relaxed">
-                                <span className="text-purple-400">curl</span> https://api.vpsphere.cloud/v1/user \<br />
+                                <span className="text-purple-400">curl</span> https://api.devtushar.uk/v1/user \<br />
                                 &nbsp;&nbsp;<span className="text-amber-400">-H</span> <span className="text-green-400">&quot;Authorization: Bearer vps_123456789&quot;</span>
                             </pre>
                         </div>
@@ -75,7 +75,7 @@ export default function DocsPage() {
 
                 <section id="rate-limits" className="mb-12 scroll-mt-24">
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 group flex items-center gap-2">
-                        Rate Limits
+                        Rate Limits{" "}
                         <a href="#rate-limits" className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary transition-opacity">#</a>
                     </h2>
                     <p className="text-slate-600 dark:text-slate-300 mb-4 leading-7">
