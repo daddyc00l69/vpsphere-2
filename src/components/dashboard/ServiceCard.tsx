@@ -9,9 +9,11 @@ interface ServiceCardProps {
     service: Service;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { color: string; label: string; bg: string; text: string }> = {
     active: { color: "bg-emerald-500", label: "Live", bg: "bg-emerald-50 dark:bg-emerald-900/20", text: "text-emerald-700 dark:text-emerald-400" },
+    running: { color: "bg-emerald-500", label: "Live", bg: "bg-emerald-50 dark:bg-emerald-900/20", text: "text-emerald-700 dark:text-emerald-400" },
     building: { color: "bg-amber-500", label: "Building", bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-400" },
+    pending: { color: "bg-indigo-500", label: "Pending", bg: "bg-indigo-50 dark:bg-indigo-900/20", text: "text-indigo-700 dark:text-indigo-400" },
     failed: { color: "bg-red-500", label: "Failed", bg: "bg-red-50 dark:bg-red-900/20", text: "text-red-700 dark:text-red-400" },
     stopped: { color: "bg-slate-500", label: "Stopped", bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-700 dark:text-slate-400" },
 };
@@ -40,7 +42,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                                 <span className="material-symbols-outlined text-sm">public</span>
-                                {service.domain}
+                                {/* Support both live API 'subdomain' and mock 'domain' */}
+                                {service.subdomain || service.domain || 'Not configured'}
                             </div>
                         </div>
                     </div>

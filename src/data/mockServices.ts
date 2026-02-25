@@ -1,13 +1,14 @@
 export interface Service {
     id: string;
     name: string;
-    domain: string;
-    status: "active" | "building" | "failed" | "stopped";
-    runtime: "Node.js" | "Docker" | "Python" | "Go" | "Static";
-    region: string;
-    updatedAt: string;
-    cpu: string;
-    memory: string;
+    domain?: string;
+    subdomain?: string;
+    status: "active" | "building" | "failed" | "stopped" | "pending" | "running";
+    runtime?: "Node.js" | "Docker" | "Python" | "Go" | "Static" | string;
+    region?: string;
+    updatedAt?: string;
+    cpu?: string;
+    memory?: string;
 }
 
 export const mockServices: Service[] = [
