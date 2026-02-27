@@ -12,7 +12,7 @@ import api from "@vpsphere/api-client";
 export default function DeploymentPage() {
     const params = useParams();
     const serviceId = params ? params.id as string : "unknown-service";
-    const [project, setProject] = React.useState<any>(null);
+    const [project, setProject] = React.useState<{ subdomain?: string } | null>(null);
 
     React.useEffect(() => {
         if (!serviceId || serviceId === "unknown-service") return;

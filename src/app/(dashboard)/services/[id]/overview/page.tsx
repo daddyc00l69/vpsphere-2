@@ -7,17 +7,33 @@ import { Button } from "@/components/ui/button";
 import api from "@vpsphere/api-client";
 import { cn } from "@/lib/utils";
 
+interface Project {
+    id: string;
+    name: string;
+    subdomain: string;
+    status: string;
+    deployment_type: string;
+    port: number | null;
+    repo_url: string;
+    branch: string;
+    root_directory: string;
+    build_command: string;
+    start_command: string;
+    updated_at: string;
+    created_at: string;
+}
+
 export default function ServiceOverviewPage() {
     const params = useParams();
     const serviceId = params.id as string;
-    const [service, setService] = useState<any>(null);
+    const [service, setService] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchService = async () => {
             try {
                 const data = await api.projects.get(serviceId);
-                setService(data);
+                setService(data as Project);
             } catch (error) {
                 console.error("Failed to fetch service:", error);
             } finally {
@@ -50,8 +66,12 @@ export default function ServiceOverviewPage() {
                             <span className="font-medium text-slate-900 dark:text-white capitalize">{service.deployment_type?.replace('_', ' ') || 'Web Service'}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-slate-500">Port</span>
+                            <span className="text-slate-500">Node Backend Port</span>
                             <span className="font-medium text-slate-900 dark:text-white">{service.port || 'Auto'}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Frontend Port</span>
+                            <span className="font-medium text-slate-900 dark:text-white">80 / 443</span>
                         </div>
                     </div>
                 </Card>
